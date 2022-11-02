@@ -4,19 +4,40 @@ import java.util.concurrent.locks.ReentrantLock;
 public class Data {
 
     private int buffer = 0;
-    private final int bufferCapacity = 9;
-    private final int productSizeCapacity = 5;
+    private int bufferCapacity = 9;
+    private int productSizeCapacity = 5;
+    private boolean producerWaits = false;
+    private boolean consumerWaits = false;
+
     ReentrantLock lock = new ReentrantLock();
     Condition bufferFullCondition = lock.newCondition();
     Condition bufferEmptyCondition = lock.newCondition();
+    Condition producerHungryCondition = lock.newCondition();
+    Condition consumerHungryCondition = lock.newCondition();
+
 
     public void produce(int id) {
         int productSize = (int) (Math.random() * (productSizeCapacity - 1)) + 1;
         try {
             lock.lock();
-            while(buffer > bufferCapacity - productSize) {
+            int counter = 0;
+            while (producerWaits) {
+                producerHungryCondition.await();
+            }
+            while (buffer > bufferCapacity - productSize) {
+                producerWaits = true;
+                counter++;
+                System.out.print("Couldn't produce ");
+                System.out.print(productSize);
+                System.out.print(" products ");
+                System.out.print(counter);
+                System.out.print(" times. Id: ");
+                System.out.println(id);
+
                 bufferFullCondition.await();
             }
+            producerWaits = false;
+            producerHungryCondition.signal();
             buffer += productSize;
             bufferEmptyCondition.signal();
         } catch (InterruptedException e) {
@@ -34,9 +55,15 @@ public class Data {
         int productSize = (int) (Math.random() * (productSizeCapacity - 1)) + 1;
         try {
             lock.lock();
-            while(buffer < productSize) {
+            while (consumerWaits) {
+                consumerHungryCondition.await();
+            }
+            while (buffer < productSize) {
+                consumerWaits = true;
                 bufferEmptyCondition.await();
             }
+            consumerWaits = false;
+            consumerHungryCondition.signal();
             buffer -= productSize;
             bufferFullCondition.signal();
         } catch (InterruptedException e) {
