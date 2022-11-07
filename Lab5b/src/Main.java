@@ -9,7 +9,7 @@ public class Main {
         Watch watch = new Watch();
         Data data = new Data(bufferCapacity, watch);
 
-        int numberOfProducers = 1;
+        int numberOfProducers = 5;
         int numberOfConsumers = 5;
         Producer[] producers = new Producer[numberOfProducers];
         Consumer[] consumers = new Consumer[numberOfConsumers];

@@ -4,8 +4,9 @@ import java.util.concurrent.locks.ReentrantLock;
 public class Data {
 
     private int buffer = 0;
-    private int bufferCapacity = 9;
-    private int productSizeCapacity = 5;
+    final private int bufferCapacity;
+    private boolean stop = false;
+    final private Watch watch;
     private boolean producerWaits = false;
     private boolean consumerWaits = false;
 
@@ -15,25 +16,27 @@ public class Data {
     Condition producerHungryCondition = lock.newCondition();
     Condition consumerHungryCondition = lock.newCondition();
 
+    public Data(int bufferCapacity, Watch watch) {
+        this.bufferCapacity = bufferCapacity;
+        this.watch = watch;
+    }
 
-    public void produce(int id) {
-        int productSize = (int) (Math.random() * (productSizeCapacity - 1)) + 1;
+    public void produce(int productSize, int id) {
         try {
             lock.lock();
-            int counter = 0;
             while (producerWaits) {
+                if (stop) {
+                    return;
+                }
                 producerHungryCondition.await();
             }
             while (buffer > bufferCapacity - productSize) {
+                if (stop) {
+                    producerWaits = false;
+                    producerHungryCondition.signal();
+                    return;
+                }
                 producerWaits = true;
-                counter++;
-                System.out.print("Couldn't produce ");
-                System.out.print(productSize);
-                System.out.print(" products ");
-                System.out.print(counter);
-                System.out.print(" times. Id: ");
-                System.out.println(id);
-
                 bufferFullCondition.await();
             }
             producerWaits = false;
@@ -48,16 +51,28 @@ public class Data {
 //        System.out.println(buffer);
     }
 
-    public void consume() {
-        int productSize = (int) (Math.random() * (productSizeCapacity - 1)) + 1;
+    public void consume(int productSize, int id) {
         try {
             lock.lock();
             while (consumerWaits) {
+                if (stop) {
+                    return;
+                }
                 consumerHungryCondition.await();
             }
             while (buffer < productSize) {
+                if (stop) {
+                    return;
+                }
                 consumerWaits = true;
                 bufferEmptyCondition.await();
+            }
+            if (productSize == -1) {
+                consumerWaits = false;
+                this.stop = true;
+                consumerHungryCondition.signal();
+                bufferFullCondition.signal();
+                return;
             }
             consumerWaits = false;
             consumerHungryCondition.signal();
@@ -70,4 +85,5 @@ public class Data {
         }
 //        System.out.println(buffer);
     }
+
 }
