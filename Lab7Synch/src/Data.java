@@ -7,15 +7,17 @@ public class Data {
     final private int bufferCapacity;
     private boolean stop = false;
     final private Watch watch;
+    final private int sleepLength;
 
     ReentrantLock bufferLock = new ReentrantLock();
     ReentrantLock consumerLock = new ReentrantLock();
     ReentrantLock producerLock = new ReentrantLock();
     Condition bufferCondition = bufferLock.newCondition();
 
-    public Data(int bufferCapacity, Watch watch) {
+    public Data(int bufferCapacity, Watch watch, int sleepLength) {
         this.bufferCapacity = bufferCapacity;
         this.watch = watch;
+        this.sleepLength = sleepLength;
     }
 
     public void produce(int productSize, int id) {
@@ -28,6 +30,7 @@ public class Data {
                 }
                 bufferCondition.await();
             }
+            Thread.sleep(sleepLength);
             buffer += productSize;
             bufferCondition.signal();
         } catch (InterruptedException e) {
@@ -55,6 +58,7 @@ public class Data {
                 bufferCondition.signal();
                 return;
             }
+            Thread.sleep(sleepLength);
             buffer -= productSize;
             bufferCondition.signal();
         } catch (InterruptedException e) {

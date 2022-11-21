@@ -4,24 +4,26 @@ public class Main {
 
     public static void main(String[] args) {
 
+        int servantSleepLength = 300;
+        int clientSleepLength = 100;
         int bufferCapacity = 9;
         long timeToRun = (long) Math.pow(10., 10.);
         Watch watch = new Watch();
-        Data data = new Data(bufferCapacity, watch);
+        Data data = new Data(bufferCapacity, watch, servantSleepLength);
 
-        int numberOfProducers = 1;
+        int numberOfProducers = 5;
         int numberOfConsumers = 5;
-        Producer[] producers = new Producer[numberOfProducers];
-        Consumer[] consumers = new Consumer[numberOfConsumers];
+        ProducerConsumer[] producers = new ProducerConsumer[numberOfProducers];
+        ProducerConsumer[] consumers = new ProducerConsumer[numberOfConsumers];
         Thread[] producerThreads = new Thread[numberOfProducers];
         Thread[] consumerThreads = new Thread[numberOfConsumers];
 
         for (int i = 0; i < numberOfConsumers; i++) {
-            consumers[i] = new Consumer(data, watch, bufferCapacity, timeToRun, i);
+            consumers[i] = new ProducerConsumer(ClientType.CONSUMER, data, watch, bufferCapacity, timeToRun, i, clientSleepLength);
             consumerThreads[i] = new Thread(consumers[i]);
         }
         for (int i = 0; i < numberOfProducers; i++) {
-            producers[i] = new Producer(data, watch, bufferCapacity, timeToRun, i);
+            producers[i] = new ProducerConsumer(ClientType.PRODUCER, data, watch, bufferCapacity, timeToRun, i, clientSleepLength);
             producerThreads[i] = new Thread(producers[i]);
         }
 
@@ -51,7 +53,7 @@ public class Main {
         long consumedSum = 0;
         System.out.println("Average consumption:");
         for (int i = 0; i < numberOfConsumers; i++) {
-            consumedSum += consumers[i].consumed;
+            consumedSum += consumers[i].produced;
         }
         System.out.println(consumedSum / numberOfConsumers);
 
