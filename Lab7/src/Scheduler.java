@@ -52,7 +52,6 @@ public class Scheduler implements Runnable{
 
     private void handle(MethodRequest methodRequest) {
         if (methodRequest.guard()) {
-//            System.out.println(methodRequest);
             methodRequest.call();
         }
         else {

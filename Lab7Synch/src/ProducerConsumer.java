@@ -2,44 +2,51 @@ import java.util.Random;
 
 public class ProducerConsumer implements Runnable {
 
-    final private ClientType type;
-    final private Data data;
-    final private Watch watch;
-    final private int bufferCapacity;
-    final private long timeToRun;
-    final private int id;
-    final private int sleepLength;
     public long produced = 0;
+    public long workCount = 0;
+    public long productionCount = 0;
+    private final ClientType type;
+    private final Data data;
+    private final int maxProductSize;
+    private final int id;
+    private final int sleepLength;
+    private boolean running;
 
-    public ProducerConsumer(ClientType type, Data data, Watch watch, int bufferCapacity, long timeToRun, int id, int sleepLength) {
+    public ProducerConsumer(ClientType type, Data data, int maxProductSize, int id, int sleepLength) {
         this.type = type;
         this.data = data;
-        this.watch = watch;
-        this.bufferCapacity = bufferCapacity;
-        this.timeToRun = timeToRun;
+        this.maxProductSize = maxProductSize;
         this.id = id;
         this.sleepLength = sleepLength;
+        this.running = true;
     }
 
     public void run() {
         Random generator = new Random(id);
 
-        while (watch.getElapsedTime() < timeToRun) {
-            int productSize = (int) (generator.nextDouble() * (bufferCapacity - 1) / 2);
-            produced += productSize;
+        while (running) {
+            int productSize = generator.nextInt(maxProductSize) + 1;
 
-            switch (this.type) {
+            boolean result = switch (this.type) {
                 case CONSUMER -> data.produce(productSize, id);
                 case PRODUCER -> data.consume(productSize, id);
+            };
+            if (result) {
+                productionCount++;
+                produced += productSize;
             }
 
             try {
                 Thread.sleep(sleepLength);
-            } catch (InterruptedException e) {
-                e.printStackTrace();
+                this.workCount++;
+            } catch (InterruptedException ignored) {
+
             }
         }
-        if (this.type == ClientType.CONSUMER) data.consume(-1, id);
+    }
 
+    public void stop(Thread thisThread) {
+        this.running = false;
+        thisThread.interrupt();
     }
 }
