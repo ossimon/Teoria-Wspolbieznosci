@@ -1,2 +1,0 @@
-jak zaimplementować kanały np onetoone albo onetoall albo alltoall za pomocą monitora w javie.
-^^^ wiedzieć jak działają.
