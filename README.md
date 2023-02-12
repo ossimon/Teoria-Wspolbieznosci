@@ -1,3 +1,3 @@
-# Teoria Wspolbieznosci
+# Theory of Concurrency
 
-Tutaj znajduja sie programy wykonane w ramach cwiczen
+This repository contains programs ment for studying and analysis of concurrent and asynchronous programming in Java, mainly focusing on the Producers/Consumers problem.
